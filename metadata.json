@@ -1,0 +1,6 @@
+{
+  "name": "Veteran Portal India",
+  "description": "Information and document publishing portal for Ex-Servicemen of India",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

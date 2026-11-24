@@ -1,0 +1,244 @@
+{
+  "entities": {
+    "SiteConfig": {
+      "title": "SiteConfig",
+      "description": "Global CMS configuration for typography, hero copy, about content, official contact info, and key PDF links.",
+      "type": "object",
+      "properties": {
+        "selectedFont": {
+          "type": "string",
+          "enum": [
+            "Inter, sans-serif",
+            "'Playfair Display', Georgia, serif",
+            "'JetBrains Mono', monospace",
+            "system-ui, sans-serif",
+            "Lora, Georgia, serif"
+          ],
+          "maxLength": 64
+        },
+        "homeHeroTitle": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "homeHeroSubtitle": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "aboutTitle": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "aboutMission": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "aboutPensionDesc": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "aboutEchsDesc": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "contactAddress": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "contactPhone": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "contactEmail": { "type": "string", "minLength": 3, "maxLength": 150 },
+        "pdfEchsUrl": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "pdfCsdUrl": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "pdfSparshUrl": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "updatedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "selectedFont",
+        "homeHeroTitle",
+        "homeHeroSubtitle",
+        "aboutTitle",
+        "aboutMission",
+        "aboutPensionDesc",
+        "aboutEchsDesc",
+        "contactAddress",
+        "contactPhone",
+        "contactEmail",
+        "pdfEchsUrl",
+        "pdfCsdUrl",
+        "pdfSparshUrl",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Dynamic portal category with SEO slug and subcategories.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "slug": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "subcategories": { "type": "array", "description": "Up to 25 subcategory names." },
+        "sortOrder": { "type": "integer" },
+        "isActive": { "type": "boolean" },
+        "authorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "name",
+        "slug",
+        "description",
+        "subcategories",
+        "sortOrder",
+        "isActive",
+        "authorId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PortalContent": {
+      "title": "PortalContent",
+      "description": "Centralized content item supporting articles, circulars, orders, schemes, news, and employment opportunities.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "slug": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "contentType": {
+          "type": "string",
+          "enum": ["article", "circular", "order", "scheme", "news", "employment"],
+          "maxLength": 32
+        },
+        "categorySlug": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "categoryName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "subcategory": { "type": "string", "maxLength": 120 },
+        "issuingAuthority": { "type": "string", "minLength": 1, "maxLength": 180 },
+        "orderNumber": { "type": "string", "maxLength": 120 },
+        "issueDate": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "publicationDate": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "publicationYear": { "type": "integer" },
+        "shortDescription": { "type": "string", "minLength": 1, "maxLength": 600 },
+        "fullContent": { "type": "string", "minLength": 1, "maxLength": 30000 },
+        "featuredImageUrl": { "type": "string", "maxLength": 500 },
+        "pdfAttachments": { "type": "array", "description": "Up to 10 PDF attachments with name and url." },
+        "officialSourceUrl": { "type": "string", "maxLength": 500 },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "published"],
+          "maxLength": 20
+        },
+        "isFeatured": { "type": "boolean" },
+        "isImportantDoc": { "type": "boolean" },
+        "authorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "title",
+        "slug",
+        "contentType",
+        "categorySlug",
+        "categoryName",
+        "subcategory",
+        "issuingAuthority",
+        "orderNumber",
+        "issueDate",
+        "publicationDate",
+        "publicationYear",
+        "shortDescription",
+        "fullContent",
+        "pdfAttachments",
+        "status",
+        "isFeatured",
+        "isImportantDoc",
+        "authorId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Circular": {
+      "title": "Circular",
+      "description": "Legacy government circular item kept for backward compatibility.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "date": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "category": { "type": "string", "enum": ["circular", "order", "notification"], "maxLength": 32 },
+        "fileUrl": { "type": "string", "maxLength": 500 },
+        "isNew": { "type": "boolean" },
+        "isPublished": { "type": "boolean" },
+        "sortOrder": { "type": "integer" },
+        "authorId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "date", "category", "isNew", "isPublished", "sortOrder", "authorId", "createdAt", "updatedAt"]
+    },
+    "NewsArticle": {
+      "title": "NewsArticle",
+      "description": "Legacy news article kept for backward compatibility.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 250 },
+        "content": { "type": "string", "minLength": 1, "maxLength": 10000 },
+        "date": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "author": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "imageUrl": { "type": "string", "maxLength": 500 },
+        "isPublished": { "type": "boolean" },
+        "authorId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "date", "author", "isPublished", "authorId", "createdAt", "updatedAt"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized administrator registry record.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "minLength": 3, "maxLength": 150 },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "role": { "type": "string", "enum": ["admin"], "maxLength": 20 },
+        "addedBy": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "displayName", "role", "addedBy", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/siteConfig/{configId}": {
+      "schema": { "$ref": "#/entities/SiteConfig" },
+      "description": "Stores the global CMS settings under document ID 'main'."
+    },
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Stores dynamic portal categories and subcategories."
+    },
+    "/portalContent/{contentId}": {
+      "schema": { "$ref": "#/entities/PortalContent" },
+      "description": "Centralized repository of articles, circulars, orders, schemes, news, and employment opportunities."
+    },
+    "/circulars/{circularId}": {
+      "schema": { "$ref": "#/entities/Circular" },
+      "description": "Legacy government circulars collection."
+    },
+    "/news/{newsId}": {
+      "schema": { "$ref": "#/entities/NewsArticle" },
+      "description": "Legacy news articles collection."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Registry of authorized admin UIDs."
+    }
+  }
+}

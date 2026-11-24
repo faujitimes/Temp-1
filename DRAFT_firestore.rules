@@ -1,0 +1,486 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Reusable Hardened Primitives ---
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isSuperAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'faujitimes@gmail.com';
+    }
+
+    function isAdmin() {
+      return isSuperAdmin() || (
+        isVerifiedUser() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // --- Validation Blueprints ---
+    function isValidSiteConfig(data) {
+      return data.keys().hasAll([
+        'selectedFont',
+        'homeHeroTitle',
+        'homeHeroSubtitle',
+        'aboutTitle',
+        'aboutMission',
+        'aboutPensionDesc',
+        'aboutEchsDesc',
+        'contactAddress',
+        'contactPhone',
+        'contactEmail',
+        'pdfEchsUrl',
+        'pdfCsdUrl',
+        'pdfSparshUrl',
+        'updatedBy',
+        'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'selectedFont',
+        'homeHeroTitle',
+        'homeHeroSubtitle',
+        'aboutTitle',
+        'aboutMission',
+        'aboutPensionDesc',
+        'aboutEchsDesc',
+        'contactAddress',
+        'contactPhone',
+        'contactEmail',
+        'pdfEchsUrl',
+        'pdfCsdUrl',
+        'pdfSparshUrl',
+        'updatedBy',
+        'updatedAt'
+      ])
+      && data.selectedFont is string
+      && data.selectedFont.size() <= 64
+      && data.selectedFont in [
+        'Inter, sans-serif',
+        "'Playfair Display', Georgia, serif",
+        "'JetBrains Mono', monospace",
+        'system-ui, sans-serif',
+        'Lora, Georgia, serif'
+      ]
+      && data.homeHeroTitle is string && data.homeHeroTitle.size() >= 1 && data.homeHeroTitle.size() <= 200
+      && data.homeHeroSubtitle is string && data.homeHeroSubtitle.size() >= 1 && data.homeHeroSubtitle.size() <= 1000
+      && data.aboutTitle is string && data.aboutTitle.size() >= 1 && data.aboutTitle.size() <= 200
+      && data.aboutMission is string && data.aboutMission.size() >= 1 && data.aboutMission.size() <= 2000
+      && data.aboutPensionDesc is string && data.aboutPensionDesc.size() >= 1 && data.aboutPensionDesc.size() <= 1000
+      && data.aboutEchsDesc is string && data.aboutEchsDesc.size() >= 1 && data.aboutEchsDesc.size() <= 1000
+      && data.contactAddress is string && data.contactAddress.size() >= 1 && data.contactAddress.size() <= 300
+      && data.contactPhone is string && data.contactPhone.size() >= 1 && data.contactPhone.size() <= 50
+      && data.contactEmail is string && data.contactEmail.size() >= 3 && data.contactEmail.size() <= 150
+      && data.pdfEchsUrl is string && data.pdfEchsUrl.size() >= 1 && data.pdfEchsUrl.size() <= 500
+      && data.pdfCsdUrl is string && data.pdfCsdUrl.size() >= 1 && data.pdfCsdUrl.size() <= 500
+      && data.pdfSparshUrl is string && data.pdfSparshUrl.size() >= 1 && data.pdfSparshUrl.size() <= 500
+      && isValidId(data.updatedBy)
+      && data.updatedBy == request.auth.uid
+      && data.updatedAt == request.time;
+    }
+
+    function isValidCategory(data) {
+      return data.keys().hasAll([
+        'name',
+        'slug',
+        'description',
+        'subcategories',
+        'sortOrder',
+        'isActive',
+        'authorId',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'name',
+        'slug',
+        'description',
+        'subcategories',
+        'sortOrder',
+        'isActive',
+        'authorId',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+      && data.slug is string && data.slug.size() >= 1 && data.slug.size() <= 80 && data.slug.matches('^[a-z0-9-]+$')
+      && data.description is string && data.description.size() >= 1 && data.description.size() <= 500
+      && data.subcategories is list
+      && data.subcategories.size() <= 25
+      && (data.subcategories.size() == 0 || (data.subcategories[0] is string && data.subcategories[0].size() >= 1 && data.subcategories[0].size() <= 100))
+      && data.sortOrder is int && data.sortOrder >= 0 && data.sortOrder <= 10000
+      && data.isActive is bool
+      && isValidId(data.authorId)
+      && data.createdAt is timestamp
+      && data.updatedAt == request.time;
+    }
+
+    function isValidPortalContent(data) {
+      return data.keys().hasAll([
+        'title',
+        'slug',
+        'contentType',
+        'categorySlug',
+        'categoryName',
+        'subcategory',
+        'issuingAuthority',
+        'orderNumber',
+        'issueDate',
+        'publicationDate',
+        'publicationYear',
+        'shortDescription',
+        'fullContent',
+        'pdfAttachments',
+        'status',
+        'isFeatured',
+        'isImportantDoc',
+        'authorId',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'title',
+        'slug',
+        'contentType',
+        'categorySlug',
+        'categoryName',
+        'subcategory',
+        'issuingAuthority',
+        'orderNumber',
+        'issueDate',
+        'publicationDate',
+        'publicationYear',
+        'shortDescription',
+        'fullContent',
+        'featuredImageUrl',
+        'pdfAttachments',
+        'officialSourceUrl',
+        'status',
+        'isFeatured',
+        'isImportantDoc',
+        'authorId',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.title is string && data.title.size() >= 1 && data.title.size() <= 300
+      && data.slug is string && data.slug.size() >= 1 && data.slug.size() <= 160 && data.slug.matches('^[a-z0-9-]+$')
+      && data.contentType is string && data.contentType.size() <= 32 && data.contentType in ['article', 'circular', 'order', 'scheme', 'news', 'employment']
+      && data.categorySlug is string && data.categorySlug.size() >= 1 && data.categorySlug.size() <= 80 && data.categorySlug.matches('^[a-z0-9-]+$')
+      && data.categoryName is string && data.categoryName.size() >= 1 && data.categoryName.size() <= 120
+      && data.subcategory is string && data.subcategory.size() <= 120
+      && data.issuingAuthority is string && data.issuingAuthority.size() >= 1 && data.issuingAuthority.size() <= 180
+      && data.orderNumber is string && data.orderNumber.size() <= 120
+      && data.issueDate is string && data.issueDate.size() >= 1 && data.issueDate.size() <= 64
+      && data.publicationDate is string && data.publicationDate.size() >= 1 && data.publicationDate.size() <= 64
+      && data.publicationYear is int && data.publicationYear >= 1947 && data.publicationYear <= 2100
+      && data.shortDescription is string && data.shortDescription.size() >= 1 && data.shortDescription.size() <= 600
+      && data.fullContent is string && data.fullContent.size() >= 1 && data.fullContent.size() <= 30000
+      && (!('featuredImageUrl' in data) || data.featuredImageUrl == null || (data.featuredImageUrl is string && data.featuredImageUrl.size() <= 500))
+      && data.pdfAttachments is list
+      && data.pdfAttachments.size() <= 10
+      && (
+        data.pdfAttachments.size() == 0 || (
+          data.pdfAttachments[0] is map
+          && data.pdfAttachments[0].keys().hasAll(['name', 'url'])
+          && data.pdfAttachments[0].keys().hasOnly(['name', 'url'])
+          && data.pdfAttachments[0].name is string
+          && data.pdfAttachments[0].name.size() >= 1
+          && data.pdfAttachments[0].name.size() <= 200
+          && data.pdfAttachments[0].url is string
+          && data.pdfAttachments[0].url.size() >= 1
+          && data.pdfAttachments[0].url.size() <= 500
+        )
+      )
+      && (!('officialSourceUrl' in data) || data.officialSourceUrl == null || (data.officialSourceUrl is string && data.officialSourceUrl.size() <= 500))
+      && data.status is string && data.status.size() <= 20 && data.status in ['draft', 'published']
+      && data.isFeatured is bool
+      && data.isImportantDoc is bool
+      && isValidId(data.authorId)
+      && data.createdAt is timestamp
+      && data.updatedAt == request.time;
+    }
+
+    function isValidCircular(data) {
+      return data.keys().hasAll([
+        'title',
+        'date',
+        'category',
+        'isNew',
+        'isPublished',
+        'sortOrder',
+        'authorId',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'title',
+        'date',
+        'category',
+        'fileUrl',
+        'isNew',
+        'isPublished',
+        'sortOrder',
+        'authorId',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.title is string && data.title.size() >= 1 && data.title.size() <= 300
+      && data.date is string && data.date.size() >= 1 && data.date.size() <= 64
+      && data.category is string && data.category.size() <= 32 && data.category in ['circular', 'order', 'notification']
+      && (!('fileUrl' in data) || data.fileUrl == null || (data.fileUrl is string && data.fileUrl.size() <= 500))
+      && data.isNew is bool
+      && data.isPublished is bool
+      && data.sortOrder is int && data.sortOrder >= 0 && data.sortOrder <= 10000
+      && isValidId(data.authorId)
+      && data.createdAt is timestamp
+      && data.updatedAt == request.time;
+    }
+
+    function isValidNewsArticle(data) {
+      return data.keys().hasAll([
+        'title',
+        'content',
+        'date',
+        'author',
+        'isPublished',
+        'authorId',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'title',
+        'content',
+        'date',
+        'author',
+        'imageUrl',
+        'isPublished',
+        'authorId',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.title is string && data.title.size() >= 1 && data.title.size() <= 250
+      && data.content is string && data.content.size() >= 1 && data.content.size() <= 10000
+      && data.date is string && data.date.size() >= 1 && data.date.size() <= 64
+      && data.author is string && data.author.size() >= 1 && data.author.size() <= 100
+      && (!('imageUrl' in data) || data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() <= 500))
+      && data.isPublished is bool
+      && isValidId(data.authorId)
+      && data.createdAt is timestamp
+      && data.updatedAt == request.time;
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll([
+        'email',
+        'displayName',
+        'role',
+        'addedBy',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.keys().hasOnly([
+        'email',
+        'displayName',
+        'role',
+        'addedBy',
+        'createdAt',
+        'updatedAt'
+      ])
+      && data.email is string && data.email.size() >= 3 && data.email.size() <= 150
+      && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
+      && data.role is string && data.role.size() <= 20 && data.role == 'admin'
+      && isValidId(data.addedBy)
+      && data.createdAt is timestamp
+      && data.updatedAt == request.time;
+    }
+
+    // --- Collection Rules ---
+
+    // Global Site Configuration (single document 'main')
+    match /siteConfig/{configId} {
+      allow get: if isValidId(configId) && configId == 'main';
+      allow list: if false;
+      allow create: if isValidId(configId)
+        && configId == 'main'
+        && isVerifiedUser()
+        && isValidSiteConfig(incoming())
+        && isAdmin();
+      allow update: if isValidId(configId)
+        && configId == 'main'
+        && isVerifiedUser()
+        && isValidSiteConfig(incoming())
+        && isAdmin()
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'selectedFont',
+          'homeHeroTitle',
+          'homeHeroSubtitle',
+          'aboutTitle',
+          'aboutMission',
+          'aboutPensionDesc',
+          'aboutEchsDesc',
+          'contactAddress',
+          'contactPhone',
+          'contactEmail',
+          'pdfEchsUrl',
+          'pdfCsdUrl',
+          'pdfSparshUrl',
+          'updatedBy',
+          'updatedAt'
+        ]);
+      allow delete: if false;
+    }
+
+    // Dynamic Portal Categories
+    match /categories/{categoryId} {
+      allow get: if isValidId(categoryId) && ((resource != null && existing().isActive == true) || isAdmin());
+      allow list: if existing().isActive == true || isSuperAdmin() || (isVerifiedUser() && existing().authorId == request.auth.uid);
+      allow create: if isValidId(categoryId)
+        && isVerifiedUser()
+        && isValidCategory(incoming())
+        && incoming().authorId == request.auth.uid
+        && incoming().createdAt == request.time
+        && isAdmin();
+      allow update: if isValidId(categoryId)
+        && isVerifiedUser()
+        && isValidCategory(incoming())
+        && incoming().authorId == existing().authorId
+        && incoming().createdAt == existing().createdAt
+        && isAdmin()
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'name',
+          'slug',
+          'description',
+          'subcategories',
+          'sortOrder',
+          'isActive',
+          'updatedAt'
+        ]);
+      allow delete: if isValidId(categoryId) && isVerifiedUser() && isAdmin();
+    }
+
+    // Centralized Portal Content
+    match /portalContent/{contentId} {
+      allow get: if isValidId(contentId) && ((resource != null && existing().status == 'published') || isAdmin());
+      allow list: if existing().status == 'published' || isSuperAdmin() || (isVerifiedUser() && existing().authorId == request.auth.uid);
+      allow create: if isValidId(contentId)
+        && isVerifiedUser()
+        && isValidPortalContent(incoming())
+        && incoming().authorId == request.auth.uid
+        && incoming().createdAt == request.time
+        && isAdmin();
+      allow update: if isValidId(contentId)
+        && isVerifiedUser()
+        && isValidPortalContent(incoming())
+        && incoming().authorId == existing().authorId
+        && incoming().createdAt == existing().createdAt
+        && isAdmin()
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'title',
+          'slug',
+          'contentType',
+          'categorySlug',
+          'categoryName',
+          'subcategory',
+          'issuingAuthority',
+          'orderNumber',
+          'issueDate',
+          'publicationDate',
+          'publicationYear',
+          'shortDescription',
+          'fullContent',
+          'featuredImageUrl',
+          'pdfAttachments',
+          'officialSourceUrl',
+          'status',
+          'isFeatured',
+          'isImportantDoc',
+          'updatedAt'
+        ]);
+      allow delete: if isValidId(contentId) && isVerifiedUser() && isAdmin();
+    }
+
+    // Legacy Government Circulars
+    match /circulars/{circularId} {
+      allow get: if isValidId(circularId) && ((resource != null && existing().isPublished == true) || isAdmin());
+      allow list: if existing().isPublished == true || isSuperAdmin();
+      allow create: if isValidId(circularId)
+        && isVerifiedUser()
+        && isValidCircular(incoming())
+        && incoming().authorId == request.auth.uid
+        && incoming().createdAt == request.time
+        && isAdmin();
+      allow update: if isValidId(circularId)
+        && isVerifiedUser()
+        && isValidCircular(incoming())
+        && incoming().authorId == existing().authorId
+        && incoming().createdAt == existing().createdAt
+        && isAdmin()
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'isNew', 'fileUrl', 'category', 'date', 'isPublished', 'sortOrder', 'updatedAt'])
+        );
+      allow delete: if isValidId(circularId) && isVerifiedUser() && isAdmin();
+    }
+
+    // Legacy News Articles
+    match /news/{newsId} {
+      allow get: if isValidId(newsId) && ((resource != null && existing().isPublished == true) || isAdmin());
+      allow list: if existing().isPublished == true || isSuperAdmin();
+      allow create: if isValidId(newsId)
+        && isVerifiedUser()
+        && isValidNewsArticle(incoming())
+        && incoming().authorId == request.auth.uid
+        && incoming().createdAt == request.time
+        && isAdmin();
+      allow update: if isValidId(newsId)
+        && isVerifiedUser()
+        && isValidNewsArticle(incoming())
+        && incoming().authorId == existing().authorId
+        && incoming().createdAt == existing().createdAt
+        && isAdmin()
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'date', 'author', 'imageUrl', 'isPublished', 'updatedAt'])
+        );
+      allow delete: if isValidId(newsId) && isVerifiedUser() && isAdmin();
+    }
+
+    // Admin Registry (PII Isolated, Super-Admin Controlled)
+    match /admins/{userId} {
+      allow get: if isValidId(userId) && isVerifiedUser() && (request.auth.uid == userId || isSuperAdmin());
+      allow list: if isSuperAdmin() && existing().role == 'admin';
+      allow create: if isValidId(userId)
+        && isSuperAdmin()
+        && isValidAdminUser(incoming())
+        && incoming().addedBy == request.auth.uid
+        && incoming().createdAt == request.time;
+      allow update: if isValidId(userId)
+        && isSuperAdmin()
+        && isValidAdminUser(incoming())
+        && incoming().addedBy == existing().addedBy
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'role', 'updatedAt']);
+      allow delete: if isValidId(userId) && isSuperAdmin();
+    }
+  }
+}

@@ -1,0 +1,73 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedSuperAdmin() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == 'faujitimes@gmail.com';
+    }
+
+    function isVerifiedDelegatedAdmin() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && firestore.exists(/databases/ai-studio-veteranportalind-9762e6b2-6dab-4b91-94a4-c08fbf05c390/documents/admins/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return isVerifiedSuperAdmin() || isVerifiedDelegatedAdmin();
+    }
+
+    // Government Circular PDFs (public read, admin-only PDF upload up to 15 MB)
+    match /circulars/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource != null
+        && request.resource.size <= 15 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+      allow delete: if isAdmin();
+    }
+
+    // Key Reference Document PDFs (public read, admin-only PDF upload up to 15 MB)
+    match /documents/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource != null
+        && request.resource.size <= 15 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+      allow delete: if isAdmin();
+    }
+
+    // News Article & Featured Photos (public read, admin-only image upload up to 5 MB)
+    match /news/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource != null
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
+    }
+
+    match /images/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource != null
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if isAdmin();
+    }
+
+    match /pdfs/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource != null
+        && request.resource.size <= 15 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+      allow delete: if isAdmin();
+    }
+  }
+}
